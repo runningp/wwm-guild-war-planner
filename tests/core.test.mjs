@@ -116,6 +116,7 @@ test('existing unreleased format 1 drafts receive empty new fields without data 
   assert.equal(JSON.stringify(s), original);
 });
 test('new default Rou Mo preserves old IDs and merges custom aliases without losing references', () => {
+  assert.deepEqual(DEFAULT_STYLES[1], { id: 'builtin-2', name: '九九' });
   assert.equal(DEFAULT_STYLES[12].name, '陌双');
   assert.deepEqual(DEFAULT_STYLES[13], { id: 'builtin-14', name: '肉陌' });
   assert.equal(DEFAULT_STYLES.some(s => s.name === '陌九'), false);
@@ -133,4 +134,15 @@ test('new default Rou Mo preserves old IDs and merges custom aliases without los
   assert.equal(JSON.stringify(s), before);
   s.customStyles.push({ id: 'another', name: '肉陌' });
   assert.throws(() => validatePlan(s), /重复/);
+});
+test('renamed Jiu Jiu keeps its ID and merges existing custom references', () => {
+  const s = fixture(); s.customStyles.push({ id: 'custom-jiujiu', name: '九九' });
+  s.people[0].styleIds = ['builtin-2', 'custom-jiujiu'];
+  allSlots(s)[0].styles = { tower: 'custom-jiujiu', goose: 'custom-jiujiu', tree: 'custom-jiujiu' };
+  assignPerson(s, 'a', allSlots(s)[0].id);
+  const restored = validatePlan(s);
+  assert.deepEqual(restored.people[0].styleIds, ['builtin-2']);
+  assert.equal(allSlots(restored)[0].styles.goose, 'builtin-2');
+  assert.equal(allSlots(restored)[0].personId, 'a');
+  assert.deepEqual(restored.customStyles, []);
 });

@@ -1,8 +1,9 @@
 export const SCHEMA_VERSION = 1;
 export const PHASES = ['tower', 'goose', 'tree'];
 export const PHASE_NAMES = { tower: '塔', goose: '鹅', tree: '树' };
-export const DEFAULT_STYLES = ['无名', '九剑', '钧钧', '玉玉', '霖霖', '翊翊', '风风', '樽樽', '尘尘', '鸢鸢', '双剑', '无名奶', '陌双', '肉陌']
+export const DEFAULT_STYLES = ['无名', '九九', '钧钧', '玉玉', '霖霖', '翊翊', '风风', '樽樽', '尘尘', '鸢鸢', '双剑', '无名奶', '陌双', '肉陌', '双扇']
   .map((name, i) => ({ id: `builtin-${i + 1}`, name }));
+const MERGED_DEFAULT_IDS = ['builtin-2', 'builtin-14', 'builtin-15'];
 export const clone = value => JSON.parse(JSON.stringify(value));
 export const nameKey = value => value.trim().normalize('NFC').toLocaleLowerCase('en');
 export const allStyles = state => [...DEFAULT_STYLES, ...state.customStyles];
@@ -27,7 +28,7 @@ export function createPlan() {
   };
 }
 
-function validateCurrent(input, allowRouMoAlias = false) {
+function validateCurrent(input, allowDefaultAliases = false) {
   const fail = message => { throw new Error(message); };
   const object = (v, keys, label) => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) fail(`${label}必须是对象。`);
@@ -52,8 +53,7 @@ function validateCurrent(input, allowRouMoAlias = false) {
   }
   const styles = allStyles(input);
   unique(styles.map(s => s.id), '流派 ID');
-  const namesToCheck = allowRouMoAlias && input.customStyles.some(s => s.name === '肉陌')
-    ? styles.filter(s => s.id !== 'builtin-14') : styles;
+  const namesToCheck = styles.filter(s => !allowDefaultAliases || !MERGED_DEFAULT_IDS.includes(s.id) || !input.customStyles.some(c => c.name === s.name));
   unique(namesToCheck.map(s => nameKey(s.name)), '流派名称');
   const styleIds = new Set(styles.map(s => s.id));
   for (const person of input.people) {
@@ -115,12 +115,16 @@ export function validatePlan(input) {
         if (slot && typeof slot === 'object' && !Object.hasOwn(slot, 'backupPersonId')) slot.backupPersonId = null;
       }
     }
-    if (Array.isArray(normalized.customStyles) && normalized.customStyles.some(s => s?.name === '肉陌')) {
+    const aliases = new Map();
+    if (Array.isArray(normalized.customStyles)) for (const custom of normalized.customStyles) {
+      const builtin = DEFAULT_STYLES.find(s => MERGED_DEFAULT_IDS.includes(s.id) && s.name === custom?.name);
+      if (builtin) aliases.set(custom.id, builtin.id);
+    }
+    if (aliases.size) {
       validateCurrent(normalized, true);
-      const alias = normalized.customStyles.find(s => s.name === '肉陌').id;
-      normalized.customStyles = normalized.customStyles.filter(s => s.id !== alias);
-      for (const person of normalized.people) person.styleIds = [...new Set(person.styleIds.map(id => id === alias ? 'builtin-14' : id))];
-      for (const slot of allSlots(normalized)) for (const phase of PHASES) if (slot.styles[phase] === alias) slot.styles[phase] = 'builtin-14';
+      normalized.customStyles = normalized.customStyles.filter(s => !aliases.has(s.id));
+      for (const person of normalized.people) person.styleIds = [...new Set(person.styleIds.map(id => aliases.get(id) ?? id))];
+      for (const slot of allSlots(normalized)) for (const phase of PHASES) slot.styles[phase] = aliases.get(slot.styles[phase]) ?? slot.styles[phase];
     }
     return validateCurrent(normalized);
   }

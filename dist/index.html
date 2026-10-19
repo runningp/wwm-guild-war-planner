@@ -27,14 +27,16 @@ dialog{color:var(--ink);background:#1c2831;border:1px solid #53646d;border-radiu
 .backup-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap}.backup-column{display:none}.show-backups .team-columns,.show-backups .slot{grid-template-columns:minmax(95px,1.25fr) repeat(3,minmax(0,1fr)) 36px minmax(85px,1fr);column-gap:9px}.show-backups .backup-column{display:flex}.slot-backup{align-items:center;gap:4px;min-width:0;border-left:1px solid var(--line);padding-left:9px;align-self:stretch}.backup-assign{flex:1;min-width:0;min-height:26px;overflow-wrap:anywhere;background:transparent;border:0;text-align:left;font-size:12px;padding:2px 3px}.backup-assign.empty{color:var(--muted);font-size:16px;text-align:center}.backup-remove{border:0;background:transparent;padding:0 3px;min-height:26px;color:var(--muted)}.slot-backup.drop-over{background:#2b4942;outline:1px dashed var(--jade)}@media(max-width:880px){.show-backups .team-columns,.show-backups .slot{grid-template-columns:minmax(72px,1.2fr) repeat(3,minmax(0,1fr)) 28px minmax(63px,.9fr);column-gap:5px}.slot-backup{padding-left:4px}.backup-assign{font-size:11px}.backup-remove{padding:0 1px}}@media(max-width:620px){.overview{gap:27px}.show-backups .team-columns,.show-backups .slot{grid-template-columns:minmax(65px,1.15fr) repeat(3,minmax(0,1fr)) 25px minmax(55px,.9fr);column-gap:3px}.show-backups .slot-edit{font-size:10px}.show-backups .style-badge{font-size:10px;padding:2px 3px}}
 .commander-badge{display:inline-block;font-size:9px;font-weight:400;line-height:1.4;padding:1px 3px;color:#efd8a4;background:#49412d;border:1px solid #a38b53;border-radius:3px;margin-left:5px;white-space:nowrap;flex-shrink:0}.backup-assign .commander-badge{margin-left:2px}.on-leave .commander-badge{color:#a5aeb4;border-color:#505b63;background:#2d353b}
 .team-heading{min-width:0;flex:1}.team-title{display:flex;align-items:center;gap:12px}.team-note-edit{font-size:10px;min-height:24px;padding:2px 5px;border:0;background:transparent;color:var(--muted)}.team-note{font-size:11px;font-weight:400;line-height:1.6;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;margin-top:4px}.team-header{gap:12px}.team-header>span{flex-shrink:0}
+.style-badge.style-disruptor{color:#e1d0f3;background:#44334f;border:1px solid #987baa}.on-leave .style-badge.style-disruptor{color:#a5aeb4;background:#2d353b;border-color:#505b63}
 
 </style>
   <script type="module">
 const SCHEMA_VERSION = 1;
 const PHASES = ['tower', 'goose', 'tree'];
 const PHASE_NAMES = { tower: '塔', goose: '鹅', tree: '树' };
-const DEFAULT_STYLES = ['无名', '九剑', '钧钧', '玉玉', '霖霖', '翊翊', '风风', '樽樽', '尘尘', '鸢鸢', '双剑', '无名奶', '陌双', '肉陌']
+const DEFAULT_STYLES = ['无名', '九九', '钧钧', '玉玉', '霖霖', '翊翊', '风风', '樽樽', '尘尘', '鸢鸢', '双剑', '无名奶', '陌双', '肉陌', '双扇']
   .map((name, i) => ({ id: `builtin-${i + 1}`, name }));
+const MERGED_DEFAULT_IDS = ['builtin-2', 'builtin-14', 'builtin-15'];
 const clone = value => JSON.parse(JSON.stringify(value));
 const nameKey = value => value.trim().normalize('NFC').toLocaleLowerCase('en');
 const allStyles = state => [...DEFAULT_STYLES, ...state.customStyles];
@@ -59,7 +61,7 @@ function createPlan() {
   };
 }
 
-function validateCurrent(input, allowRouMoAlias = false) {
+function validateCurrent(input, allowDefaultAliases = false) {
   const fail = message => { throw new Error(message); };
   const object = (v, keys, label) => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) fail(`${label}必须是对象。`);
@@ -84,8 +86,7 @@ function validateCurrent(input, allowRouMoAlias = false) {
   }
   const styles = allStyles(input);
   unique(styles.map(s => s.id), '流派 ID');
-  const namesToCheck = allowRouMoAlias && input.customStyles.some(s => s.name === '肉陌')
-    ? styles.filter(s => s.id !== 'builtin-14') : styles;
+  const namesToCheck = styles.filter(s => !allowDefaultAliases || !MERGED_DEFAULT_IDS.includes(s.id) || !input.customStyles.some(c => c.name === s.name));
   unique(namesToCheck.map(s => nameKey(s.name)), '流派名称');
   const styleIds = new Set(styles.map(s => s.id));
   for (const person of input.people) {
@@ -147,12 +148,16 @@ function validatePlan(input) {
         if (slot && typeof slot === 'object' && !Object.hasOwn(slot, 'backupPersonId')) slot.backupPersonId = null;
       }
     }
-    if (Array.isArray(normalized.customStyles) && normalized.customStyles.some(s => s?.name === '肉陌')) {
+    const aliases = new Map();
+    if (Array.isArray(normalized.customStyles)) for (const custom of normalized.customStyles) {
+      const builtin = DEFAULT_STYLES.find(s => MERGED_DEFAULT_IDS.includes(s.id) && s.name === custom?.name);
+      if (builtin) aliases.set(custom.id, builtin.id);
+    }
+    if (aliases.size) {
       validateCurrent(normalized, true);
-      const alias = normalized.customStyles.find(s => s.name === '肉陌').id;
-      normalized.customStyles = normalized.customStyles.filter(s => s.id !== alias);
-      for (const person of normalized.people) person.styleIds = [...new Set(person.styleIds.map(id => id === alias ? 'builtin-14' : id))];
-      for (const slot of allSlots(normalized)) for (const phase of PHASES) if (slot.styles[phase] === alias) slot.styles[phase] = 'builtin-14';
+      normalized.customStyles = normalized.customStyles.filter(s => !aliases.has(s.id));
+      for (const person of normalized.people) person.styleIds = [...new Set(person.styleIds.map(id => aliases.get(id) ?? id))];
+      for (const slot of allSlots(normalized)) for (const phase of PHASES) slot.styles[phase] = aliases.get(slot.styles[phase]) ?? slot.styles[phase];
     }
     return validateCurrent(normalized);
   }
@@ -198,7 +203,7 @@ let state = createPlan(), selectedPerson = null, draggedPerson = null, toastTime
 const dialog = $('#editor');
 const styleName = id => allStyles(state).find(s => s.id === id)?.name ?? '未设置';
 const commanderBadge = p => p?.isCommander ? '<span class="commander-badge">指挥</span>' : '';
-const styleTone = name => name === '霖霖' ? 'style-healer' : ['陌刀', '陌双', '肉陌'].includes(name) ? 'style-blade' : 'style-dps';
+const styleTone = name => name === '翊翊' ? 'style-disruptor' : ['霖霖', '双扇'].includes(name) ? 'style-healer' : ['陌刀', '陌双', '肉陌'].includes(name) ? 'style-blade' : 'style-dps';
 const styleBadge = id => id ? `<span class="chip style-badge ${styleTone(styleName(id))}">${esc(styleName(id))}</span>` : '<span class="stage-value unset">未设置</span>';
 const personById = id => state.people.find(p => p.id === id);
 const slotById = id => allSlots(state).find(s => s.id === id);

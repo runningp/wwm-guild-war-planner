@@ -23,6 +23,12 @@ try {
   await page.locator('#team-note').fill('中路支援\n保护队友');
   await page.locator('#team-form button[type=submit]').click();
   assert.equal(await page.locator('.team-note').first().textContent(), '中路支援\n保护队友');
+  await page.locator('#manage-styles').click();
+  assert.equal(await page.locator('.style-list .style-healer').filter({ hasText: '双扇' }).count(), 1);
+  assert.equal(await page.locator('.style-list .style-disruptor').filter({ hasText: '翊翊' }).count(), 1);
+  assert.equal(await page.getByText('九九', { exact: true }).count(), 1);
+  assert.equal(await page.getByText('九剑', { exact: true }).count(), 0);
+  await page.getByRole('button', { name: '关闭弹窗' }).click();
   await page.screenshot({ path: 'test-results/desktop-empty.png', fullPage: true });
   for (const name of ['阿青', '小白']) {
     await page.locator('#add-person').click(); await page.locator('#person-name').fill(name);
@@ -68,7 +74,7 @@ try {
   assert.equal(await page.locator('.slot-number').count(), 0);
   assert.equal(await page.locator('.slot-stages .slot-style').count(), 90);
   assert.match(await page.locator('[data-slot="attack-1-1"] [data-stage=tower]').textContent(), /无名/);
-  assert.match(await page.locator('[data-slot="attack-1-1"] [data-stage=goose]').textContent(), /九剑/);
+  assert.match(await page.locator('[data-slot="attack-1-1"] [data-stage=goose]').textContent(), /九九/);
   assert.match(await page.locator('[data-slot="attack-1-1"] [data-stage=tree]').textContent(), /无名/);
   await page.locator('#manage-styles').click(); await page.locator('#custom-style-name').fill('测试流派');
   await page.locator('#style-form button[type=submit]').click();
