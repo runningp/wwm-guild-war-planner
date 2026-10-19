@@ -5,4 +5,5 @@
 - 布局：1440 × 1100 桌面、390 × 844 手机宽度，无横向溢出；检查实际截图。截图和演示数据仅保存在忽略目录 test-results，不属于用户方案。
 - 单文件版本：验证 file URL 直接打开后可录入人员并在刷新后恢复，不依赖本地预览服务器。
 - 依据 frontend-design 和 Vercel web-design-guidelines 审查，补充跳过导航链接、合理标题层级、明确标签、键盘替代操作、焦点恢复、减少动态效果、模态窗口滚动隔离和长文本换行。
-- 尚未发布到 GitHub Pages，尚未在 Safari 或真实触屏设备实测。
+- 已发布到 GitHub Pages：https://runningp.github.io/wwm-guild-war-planner/ 。公网验证 HTTP 200、30 个位置、指挥编辑、人员安排、刷新保存、替补隐藏和 JavaScript 无错误；验证使用独立临时浏览器，不写入用户方案。
+- 尚未在 Safari 或真实触屏设备实测。
