@@ -1,0 +1,10 @@
+{
+  "name": "wwm-war-planner",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "portable": "node build-portable.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

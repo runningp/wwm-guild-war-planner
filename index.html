@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#141c23">
+  <meta name="description" content="WWM 国际服百业战规划板。在浏览器中配置六支小队、管理人员，保存并分享阵容。">
+  <title>百业布阵 · WWM 百业战规划</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到规划区</a>
+  <header class="app-header">
+    <a class="brand" href="./" aria-label="百业布阵首页"><span class="seal" aria-hidden="true">布<br>阵</span><span><strong>百业布阵</strong><small>WWM 国际服 · 百业战规划</small></span></a>
+    <div class="file-actions"><span id="save-state" class="save-state" role="status">仅保存在此浏览器</span><button id="new-plan" class="quiet">新建方案</button><button id="import-plan">导入 JSON</button><button id="export-plan" class="primary">导出 JSON <span aria-hidden="true">↓</span></button></div>
+    <input id="file-input" type="file" accept=".json,application/json" hidden>
+  </header>
+  <div id="recovery" class="recovery" hidden></div>
+  <main id="main">
+    <h1 class="sr-only">WWM 百业战规划</h1>
+    <section class="plan-header" aria-label="当前方案">
+      <div class="plan-title"><label for="plan-name">当前方案</label><input id="plan-name" name="planName" maxlength="80" autocomplete="off" value="未命名方案" aria-label="方案名称"></div>
+      <div class="overview" id="overview"></div>
+    </section>
+    <div class="workspace">
+      <aside class="roster" aria-labelledby="roster-title">
+        <div class="panel-heading"><h2 id="roster-title">人员名单 <span id="people-count"></span></h2><button id="add-person" class="small primary">＋ 添加</button></div>
+        <div class="roster-tools"><label class="sr-only" for="search">搜索人员</label><input id="search" type="search" placeholder="搜索名字、流派或备注…" autocomplete="off"><div class="legend"><span class="available-dot">未安排</span><span class="assigned-dot">已安排</span><span class="leave-dot">请假</span></div></div>
+        <div id="people-list" class="people-list" aria-label="人员列表"></div>
+        <div id="return-zone" class="return-zone">拖回此处撤下人员<button id="cancel-selection" class="text-button" hidden>取消选择</button></div>
+        <div class="roster-footer"><button id="manage-styles" class="text-button">管理流派</button></div>
+      </aside>
+      <section class="board" aria-label="六队配置区">
+        <div class="board-toolbar"><div><h2>战术配置</h2><p id="selection-hint" hidden></p></div><label class="backup-toggle"><input id="show-backups" type="checkbox" checked>显示替补</label></div>
+        <div id="teams"></div>
+      </section>
+    </div>
+  </main>
+  <dialog id="editor" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript>请启用 JavaScript。</noscript>
+</body>
+</html>
