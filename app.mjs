@@ -7,7 +7,7 @@ let state = createPlan(), selectedPerson = null, draggedPerson = null, toastTime
 const dialog = $('#editor');
 const styleName = id => allStyles(state).find(s => s.id === id)?.name ?? '未设置';
 const commanderBadge = p => p?.isCommander ? '<span class="commander-badge">指挥</span>' : '';
-const styleTone = name => name === '霖霖' ? 'style-healer' : ['陌刀', '陌双'].includes(name) ? 'style-blade' : 'style-dps';
+const styleTone = name => name === '霖霖' ? 'style-healer' : ['陌刀', '陌双', '肉陌'].includes(name) ? 'style-blade' : 'style-dps';
 const styleBadge = id => id ? `<span class="chip style-badge ${styleTone(styleName(id))}">${esc(styleName(id))}</span>` : '<span class="stage-value unset">未设置</span>';
 const personById = id => state.people.find(p => p.id === id);
 const slotById = id => allSlots(state).find(s => s.id === id);

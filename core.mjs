@@ -1,7 +1,7 @@
 export const SCHEMA_VERSION = 1;
 export const PHASES = ['tower', 'goose', 'tree'];
 export const PHASE_NAMES = { tower: '塔', goose: '鹅', tree: '树' };
-export const DEFAULT_STYLES = ['无名', '九剑', '钧钧', '玉玉', '霖霖', '翊翊', '风风', '樽樽', '尘尘', '鸢鸢', '双剑', '无名奶', '陌双']
+export const DEFAULT_STYLES = ['无名', '九剑', '钧钧', '玉玉', '霖霖', '翊翊', '风风', '樽樽', '尘尘', '鸢鸢', '双剑', '无名奶', '陌双', '肉陌']
   .map((name, i) => ({ id: `builtin-${i + 1}`, name }));
 export const clone = value => JSON.parse(JSON.stringify(value));
 export const nameKey = value => value.trim().normalize('NFC').toLocaleLowerCase('en');
@@ -27,7 +27,7 @@ export function createPlan() {
   };
 }
 
-function validateCurrent(input) {
+function validateCurrent(input, allowRouMoAlias = false) {
   const fail = message => { throw new Error(message); };
   const object = (v, keys, label) => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) fail(`${label}必须是对象。`);
@@ -52,7 +52,9 @@ function validateCurrent(input) {
   }
   const styles = allStyles(input);
   unique(styles.map(s => s.id), '流派 ID');
-  unique(styles.map(s => nameKey(s.name)), '流派名称');
+  const namesToCheck = allowRouMoAlias && input.customStyles.some(s => s.name === '肉陌')
+    ? styles.filter(s => s.id !== 'builtin-14') : styles;
+  unique(namesToCheck.map(s => nameKey(s.name)), '流派名称');
   const styleIds = new Set(styles.map(s => s.id));
   for (const person of input.people) {
     object(person, ['id', 'name', 'styleIds', 'note', 'onLeave', 'isCommander'], '人员');
@@ -100,7 +102,7 @@ function validateCurrent(input) {
 }
 
 export function validatePlan(input) {
-  // Unreleased format 1: fill newly introduced fields in existing browser drafts.
+  // Keep existing format 1 drafts compatible with optional additions.
   if (input?.schemaVersion === SCHEMA_VERSION) {
     const normalized = clone(input);
     if (!Object.hasOwn(normalized, 'showBackups')) normalized.showBackups = true;
@@ -112,6 +114,13 @@ export function validatePlan(input) {
       if (Array.isArray(team?.slots)) for (const slot of team.slots) {
         if (slot && typeof slot === 'object' && !Object.hasOwn(slot, 'backupPersonId')) slot.backupPersonId = null;
       }
+    }
+    if (Array.isArray(normalized.customStyles) && normalized.customStyles.some(s => s?.name === '肉陌')) {
+      validateCurrent(normalized, true);
+      const alias = normalized.customStyles.find(s => s.name === '肉陌').id;
+      normalized.customStyles = normalized.customStyles.filter(s => s.id !== alias);
+      for (const person of normalized.people) person.styleIds = [...new Set(person.styleIds.map(id => id === alias ? 'builtin-14' : id))];
+      for (const slot of allSlots(normalized)) for (const phase of PHASES) if (slot.styles[phase] === alias) slot.styles[phase] = 'builtin-14';
     }
     return validateCurrent(normalized);
   }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPlan, validatePlan, assignPerson, assignedSlot, unassignPerson, setLeave, deleteStyle, allSlots, PHASES } from '../core.mjs';
+import { createPlan, validatePlan, assignPerson, assignedSlot, unassignPerson, setLeave, deleteStyle, allSlots, PHASES, DEFAULT_STYLES } from '../core.mjs';
 function fixture() {
   const s = createPlan();
   s.people.push({ id: 'a', name: '阿青', styleIds: ['builtin-1'], note: '主攻', onLeave: false, isCommander: false }, { id: 'b', name: '小白', styleIds: [], note: '', onLeave: false, isCommander: false });
@@ -114,4 +114,23 @@ test('existing unreleased format 1 drafts receive empty new fields without data 
   assert.ok(allSlots(restored).every(slot => slot.backupPersonId === null));
   assert.ok(restored.teams.every(team => team.note === ''));
   assert.equal(JSON.stringify(s), original);
+});
+test('new default Rou Mo preserves old IDs and merges custom aliases without losing references', () => {
+  assert.equal(DEFAULT_STYLES[12].name, '陌双');
+  assert.deepEqual(DEFAULT_STYLES[13], { id: 'builtin-14', name: '肉陌' });
+  assert.equal(DEFAULT_STYLES.some(s => s.name === '陌九'), false);
+  const s = fixture(); s.customStyles.push({ id: 'custom-roumo', name: '肉陌' });
+  s.people[0].styleIds = ['custom-roumo', 'builtin-14'];
+  const slot = allSlots(s)[0]; slot.note = '保留';
+  slot.styles = { tower: 'custom-roumo', goose: 'custom-roumo', tree: 'custom-roumo' };
+  assignPerson(s, 'a', slot.id);
+  const before = JSON.stringify(s), restored = validatePlan(s);
+  assert.deepEqual(restored.customStyles, []);
+  assert.deepEqual(restored.people[0].styleIds, ['builtin-14']);
+  assert.deepEqual(allSlots(restored)[0].styles, { tower: 'builtin-14', goose: 'builtin-14', tree: 'builtin-14' });
+  assert.equal(allSlots(restored)[0].personId, 'a');
+  assert.equal(allSlots(restored)[0].note, '保留');
+  assert.equal(JSON.stringify(s), before);
+  s.customStyles.push({ id: 'another', name: '肉陌' });
+  assert.throws(() => validatePlan(s), /重复/);
 });

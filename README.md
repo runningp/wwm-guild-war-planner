@@ -38,7 +38,7 @@ WWM 国际服百业战规划工具。纯静态网页，无服务端、无账号�
 
 ## 文件格式
 
-JSON 顶层含 `schemaVersion: 1`、方案名 `name`、自定义流派 `customStyles`、人员 `people`、小队和位置 `teams`。人员和流派使用稳定 ID 引用。内置流派 ID 按需求给定顺序为 `builtin-1` 至 `builtin-13`，后续不得重排其身份。
+JSON 顶层含 `schemaVersion: 1`、方案名 `name`、自定义流派 `customStyles`、人员 `people`、小队和位置 `teams`。人员和流派使用稳定 ID 引用。原有内置流派 ID `builtin-1` 至 `builtin-13` 保持不变，新增肉陌为 `builtin-14`（Tank，棕色）。旧方案自定义的同名肉陌会合并至默认流派，保留人员及位置引用。
 
 当前首版只支持格式 1；缺失或未知版本会拒绝导入，保留现有方案。未来数据结构升级时在 `core.mjs` 添加明确迁移。导入不猜测旧格式，不静默忽略多余字段。文件大小上限为 5 MB。
 
